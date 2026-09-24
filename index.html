@@ -1,0 +1,42 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Pietrix Store</title>
+<style>
+*{box-sizing:border-box}body{margin:0;font-family:Arial,Helvetica,sans-serif;background:#f6f7fb;color:#161616}
+header{background:#111;color:#fff;position:sticky;top:0;z-index:5}.top{max-width:1100px;margin:auto;padding:18px 20px;display:flex;align-items:center;gap:22px}
+.logo{font-size:25px;font-weight:900;color:#ffd21c}.nav{margin-left:auto;display:flex;gap:16px}.nav a{color:#fff;text-decoration:none}.cart{background:#ffd21c;color:#111;border:0;padding:10px 14px;border-radius:10px;font-weight:800}
+.hero{max-width:1100px;margin:25px auto;padding:55px 25px;border-radius:24px;background:linear-gradient(135deg,#111,#ffd21c);color:#fff}
+.hero h1{font-size:48px;margin:0 0 10px}.hero p{font-size:18px}
+.wrap{max-width:1100px;margin:auto;padding:0 20px}.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:18px}
+.card{background:#fff;border-radius:18px;overflow:hidden;box-shadow:0 5px 18px #00000012}.photo{height:250px;background:#eee;display:flex;align-items:center;justify-content:center;color:#777}.photo img{width:100%;height:100%;object-fit:cover}
+.card-body{padding:16px}.price{font-size:23px;font-weight:900}.btn{width:100%;border:0;border-radius:10px;padding:12px;margin-top:10px;background:#111;color:#fff;font-weight:800}
+.news{margin:45px 0;background:#fff;border-radius:18px;padding:25px}.news form{display:flex;gap:10px}.news input{flex:1;padding:13px;border:1px solid #ddd;border-radius:10px}
+.modal{display:none;position:fixed;inset:0;background:#0008;z-index:10;padding:20px}.box{background:#fff;max-width:600px;margin:30px auto;padding:25px;border-radius:18px;max-height:90vh;overflow:auto}.box input,.box textarea{width:100%;padding:12px;margin:6px 0 12px;border:1px solid #ddd;border-radius:9px}.row{display:flex;justify-content:space-between;gap:10px;margin:10px 0}
+@media(max-width:600px){.nav{display:none}.hero h1{font-size:35px}.news form{flex-direction:column}}
+</style>
+</head>
+<body>
+<header><div class="top"><div class="logo">PIETRIX</div><nav class="nav"><a href="#produtos">Produtos</a><a href="#newsletter">Novidades</a></nav><button class="cart" onclick="openCart()">Carrinho (<span id="count">0</span>)</button></div></header>
+<section class="hero"><div class="wrap"><h1>PIETRIX STORE</h1><p>Produtos oficiais, feitos sob demanda.</p></div></section>
+<main class="wrap">
+<h2 id="produtos">Produtos</h2><div id="products" class="grid"></div>
+<section id="newsletter" class="news"><h2>Receba novidades</h2><p>Coloque seu e-mail para receber lançamentos.</p><form onsubmit="subscribe(event)"><input id="email" type="email" placeholder="Seu melhor e-mail" required><button class="btn" type="submit">Cadastrar</button></form><p id="submsg"></p></section>
+</main>
+<div id="modal" class="modal"><div class="box"><div class="row"><h2>Seu pedido</h2><button onclick="closeCart()">✕</button></div><div id="cart"></div><hr><h3>Dados de entrega</h3><input id="name" placeholder="Nome completo"><input id="checkoutEmail" type="email" placeholder="E-mail"><input id="address" placeholder="Endereço"><div class="row"><input id="city" placeholder="Cidade"><input id="state" placeholder="UF"></div><input id="zip" placeholder="CEP"><button class="btn" onclick="checkout()">Criar pedido</button><p id="msg"></p></div></div>
+<script>
+let products=[], cart=[];
+const money=v=>new Intl.NumberFormat("pt-BR",{style:"currency",currency:"BRL"}).format(v);
+async function load(){products=await (await fetch("/api/products")).json();render();}
+function render(){document.querySelector("#products").innerHTML=products.map(p=>`<article class="card"><div class="photo">${p.image?`<img src="${p.image}" alt="">`:"Imagem do produto"}</div><div class="card-body"><h3>${p.name}</h3><div class="price">${money(p.price)}</div><button class="btn" onclick="add('${p.id}')">Adicionar ao carrinho</button></div></article>`).join("");document.querySelector("#count").textContent=cart.reduce((a,b)=>a+b.quantity,0)}
+function add(id){let x=cart.find(i=>i.productId===id);if(x)x.quantity++;else cart.push({productId:id,quantity:1});render()}
+function openCart(){document.querySelector("#modal").style.display="block";let c=document.querySelector("#cart");c.innerHTML=cart.length?cart.map(i=>{let p=products.find(x=>x.id===i.productId);return `<div class="row"><span>${p.name} × ${i.quantity}</span><b>${money(p.price*i.quantity)}</b></div>`}).join(""):"Carrinho vazio."}
+function closeCart(){document.querySelector("#modal").style.display="none"}
+async function subscribe(e){e.preventDefault();let email=document.querySelector("#email").value;let r=await fetch("/api/subscribe",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({email})});document.querySelector("#submsg").textContent=r.ok?"E-mail cadastrado!":"Não foi possível cadastrar."}
+async function checkout(){let customer={name:name.value,email:checkoutEmail.value,address:address.value,city:city.value,state:state.value,zip:zip.value,country:"BR"};let r=await fetch("/api/orders",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({customer,items:cart})});let j=await r.json();msg.textContent=r.ok?`Pedido criado: ${j.order.id}. Aguarde a confirmação.`:(j.error||"Erro.");if(r.ok){cart=[];render()}}
+load();
+</script>
+</body>
+</html>

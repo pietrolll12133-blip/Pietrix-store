@@ -1,0 +1,16 @@
+[
+  {
+    "id": "camiseta-arena",
+    "name": "Camiseta Arena X",
+    "price": 79.90,
+    "image": "",
+    "printfulSyncVariantId": null
+  },
+  {
+    "id": "moletom-arena",
+    "name": "Moletom Arena X",
+    "price": 119.90,
+    "image": "",
+    "printfulSyncVariantId": null
+  }
+]
